@@ -23,7 +23,24 @@ SRC_URI = "${GNOME_MIRROR}/libsoup/${SHRT_VER}/libsoup-${PV}.tar.xz \
            file://CVE-2025-32906-2.patch \
            file://CVE-2025-32909.patch \
            file://CVE-2025-46420.patch \
-          "
+           file://CVE-2025-32910-1.patch \
+           file://CVE-2025-32910-2.patch \
+           file://CVE-2025-32910-3.patch \
+           file://CVE-2025-32911_CVE-2025-32913-1.patch \
+           file://CVE-2025-32911_CVE-2025-32913-2.patch \
+           file://CVE-2025-32912-1.patch \
+           file://CVE-2025-32912-2.patch \
+           file://CVE-2025-32914.patch \
+           file://CVE-2025-4969.patch \
+           file://CVE-2025-32907.patch \
+           file://CVE-2025-32053.patch \
+           file://CVE-2025-32052.patch \
+           file://CVE-2025-32050.patch \
+           file://CVE-2025-46421.patch \
+           file://CVE-2025-4948.patch \
+           file://CVE-2025-4476.patch \
+           file://CVE-2025-2784.patch \
+"
 SRC_URI[sha256sum] = "e4b77c41cfc4c8c5a035fcdc320c7bc6cfb75ef7c5a034153df1413fa1d92f13"
 
 CVE_PRODUCT = "libsoup"
