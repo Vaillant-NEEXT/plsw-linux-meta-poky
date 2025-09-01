@@ -3186,6 +3186,22 @@ class assuming :term:`PATCHRESOLVE` is set to "user", the
 :ref:`ref-classes-cml1` class, and the :ref:`ref-classes-devshell` class all
 use the :ref:`ref-classes-terminal` class.
 
+.. _ref-classes-testexport:
+
+``testexport``
+==============
+
+Based on the :ref:`ref-classes-testimage` class, the
+:ref:`ref-classes-testexport` class can be used to export the test environment
+outside of the :term:`OpenEmbedded Build System`. This will generate the
+directory structure to execute the runtime tests using the
+:oe_git:`runexported.py </openembedded-core/tree/meta/lib/oeqa/runexported.py>`
+Python script.
+
+For more details on how to use :ref:`ref-classes-testexport`, see
+the :ref:`test-manual/runtime-testing:Exporting Tests` section in the Yocto
+Project Test Environment Manual.
+
 .. _ref-classes-testimage:
 
 ``testimage``
@@ -3316,6 +3332,9 @@ The variables used by this class are:
 -  :term:`SPL_SIGN_ENABLE`: enable signing the FIT image.
 -  :term:`SPL_SIGN_KEYDIR`: directory containing the signing keys.
 -  :term:`SPL_SIGN_KEYNAME`: base filename of the signing keys.
+-  :term:`SPL_DTB_BINARY`: Name of the SPL device tree binary. Can be set to an
+   empty string to indicate that no SPL should be created and added to the FIT
+   image.
 -  :term:`UBOOT_FIT_ADDRESS_CELLS`: ``#address-cells`` value for the FIT image.
 -  :term:`UBOOT_FIT_DESC`: description string encoded into the FIT image.
 -  :term:`UBOOT_FIT_GENERATE_KEYS`: generate the keys if they don't exist yet.
