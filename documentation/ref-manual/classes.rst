@@ -355,8 +355,12 @@ file for details about how to enable this mechanism in your configuration
 file, how to disable it for specific recipes, and how to share ``ccache``
 files between builds.
 
-However, using the class can lead to unexpected side-effects. Thus, using
-this class is not recommended.
+Recipes can also explicitly disable `Ccache` support even when the
+:ref:`ref-classes-ccache` class is enabled, by setting the
+:term:`CCACHE_DISABLE` variable to "1".
+
+Using the :ref:`ref-classes-ccache` class can lead to unexpected side-effects.
+Using this class is not recommended.
 
 .. _ref-classes-chrpath:
 
@@ -908,6 +912,14 @@ The :ref:`ref-classes-gettext` class provides support for building
 software that uses the GNU ``gettext`` internationalization and localization
 system. All recipes building software that use ``gettext`` should inherit this
 class.
+
+This class will configure recipes to build translations *unless*:
+
+-  the :term:`USE_NLS` variable is set to ``no``, or
+
+-  the :term:`INHIBIT_DEFAULT_DEPS` variable is set and the recipe inheriting
+   the :ref:`ref-classes-gettext` class does not also inherit the
+   :ref:`ref-classes-cross-canadian` class.
 
 .. _ref-classes-github-releases:
 
@@ -2692,6 +2704,25 @@ The :ref:`ref-classes-recipe_sanity` class checks for the presence of any host s
 recipe prerequisites that might affect the build (e.g. variables that
 are set or software that is present).
 
+.. _ref-classes-relative_symlinks:
+
+``relative_symlinks``
+=====================
+
+The :ref:`ref-classes-relative_symlinks` class walks the symbolic links in the
+:term:`D` directory and replaces links pointing to absolute paths to relative
+paths. This is occasionally used in some recipes that create wrong symbolic
+links when their :ref:`ref-classes-native` version is built, and/or would cause
+breakage in the :ref:`overview-manual/concepts:shared state cache`.
+
+For example, if the following symbolic link is found in :term:`D`::
+
+   /usr/bin/foo -> /sbin/bar
+
+It is replaced by::
+
+   /usr/bin/foo -> ../../sbin/bar
+
 .. _ref-classes-relocatable:
 
 ``relocatable``
@@ -3363,22 +3394,51 @@ imitates.
 ``uninative``
 =============
 
-Attempts to isolate the build system from the host distribution's C
-library in order to make re-use of native shared state artifacts across
-different host distributions practical. With this class enabled, a
-tarball containing a pre-built C library is downloaded at the start of
-the build. In the Poky reference distribution this is enabled by default
-through ``meta/conf/distro/include/yocto-uninative.inc``. Other
-distributions that do not derive from poky can also
-"``require conf/distro/include/yocto-uninative.inc``" to use this.
-Alternatively if you prefer, you can build the uninative-tarball recipe
-yourself, publish the resulting tarball (e.g. via HTTP) and set
-``UNINATIVE_URL`` and ``UNINATIVE_CHECKSUM`` appropriately. For an
-example, see the ``meta/conf/distro/include/yocto-uninative.inc``.
+The :ref:`ref-classes-uninative` class allows binaries to run on systems with
+older or newer :wikipedia:`Glibc <Glibc>` versions. This means
+:ref:`ref-classes-native` recipe :ref:`overview-manual/concepts:shared state
+cache` can be shared among different host distributions of different versions,
+i.e. the :ref:`overview-manual/concepts:shared state cache` is "universal".
 
-The :ref:`ref-classes-uninative` class is also used unconditionally by the extensible
-SDK. When building the extensible SDK, ``uninative-tarball`` is built
-and the resulting tarball is included within the SDK.
+To allow this to work, the dynamic loader is changed to our own :manpage:`ld.so
+<ld.so.8>` when binaries are compiled using the
+``--dynamic-linker`` option. This means when the binary is executed, it finds
+our own :manpage:`ld.so <ld.so.8>` and that loader has a modified search path
+which finds a newer Glibc version.
+
+The linking of the binaries is not changed at link time since the
+headers on the system wouldn't match the newer Glibc and this causes
+obtuse failures. Changing the loader is effectively the same as if the
+system had a Glibc upgrade after the binary was compiled, so it is a
+mechanism supported by upstream.
+
+One caveat to this approach is that the uninative Glibc binary must be
+equal to or newer in version to the versions on all the systems using
+the common :ref:`overview-manual/concepts:shared state cache`. This is why
+:ref:`ref-classes-uninative`  is regularly changed on the development and stable
+branches.
+
+Another potential issue is static linking: static libraries created on
+a system with a new Glibc version may have symbols not present in older
+versions, which would then fail during linking on older systems. This
+is one reason we don't use static linking for our :ref:`ref-classes-native`
+binaries.
+
+With this class enabled, a tarball containing a pre-built C library is
+downloaded at the start of the build. In the Poky reference distribution this is
+enabled by default through :oe_git:`meta/conf/distro/include/yocto-uninative.inc
+</openembedded-core/tree/meta/conf/distro/include/yocto-uninative.inc>`. Other distributions that do
+not derive from Poky can also "``require conf/distro/include/yocto-uninative.inc``"
+to use this. Alternatively if you prefer, you can build the uninative-tarball
+recipe yourself, publish the resulting tarball (e.g. via HTTP) and set
+:term:`UNINATIVE_URL` and :term:`UNINATIVE_CHECKSUM` appropriately. For an
+example, see :oe_git:`meta/conf/distro/include/yocto-uninative.inc
+</openembedded-core/tree/meta/conf/distro/include/yocto-uninative.inc>`.
+
+The :ref:`ref-classes-uninative` class is also used unconditionally by the
+:doc:`extensible SDK </sdk-manual/extensible>`. When building the extensible
+SDK, ``uninative-tarball`` is built and the resulting tarball is included within
+the SDK.
 
 .. _ref-classes-update-alternatives:
 
