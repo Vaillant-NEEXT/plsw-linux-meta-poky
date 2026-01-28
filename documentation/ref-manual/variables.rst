@@ -1463,6 +1463,12 @@ system and gives an overview of their function and contents.
       :term:`CCACHE_DISABLE` variable can be set to "1" in a recipe to disable
       `Ccache` support. This is useful when the recipe is known to not support it.
 
+   :term:`CCACHE_TOP_DIR`
+      When inheriting the :ref:`ref-classes-ccache` class, the
+      :term:`CCACHE_TOP_DIR` variable can be set to the location of where
+      `Ccache` stores its cache files. This directory can be shared between
+      builds.
+
    :term:`CCLD`
       The minimal command and arguments used to run the linker when the C
       compiler is being used as the linker.
@@ -3836,6 +3842,24 @@ system and gives an overview of their function and contents.
       support for a new image type. For more examples on how to set this
       variable, see the :ref:`ref-classes-image_types`
       class file, which is ``meta/classes-recipe/image_types.bbclass``.
+
+   :term:`IMAGE_CONTAINER_NO_DUMMY`
+      When an image recipe has the ``container`` image type in
+      :term:`IMAGE_FSTYPES`, it expects the :term:`PREFERRED_PROVIDER` for
+      the Linux kernel (``virtual/kernel``) to be set to ``linux-dummy`` from a
+      :term:`configuration file`. Otherwise, an error is triggered.
+
+      When set to "1", the :term:`IMAGE_CONTAINER_NO_DUMMY` variable allows the
+      :term:`PREFERRED_PROVIDER` variable to be set to another value, thus
+      skipping the check and not triggering the build error. Any other value
+      will keep the check.
+
+      This variable should be set from the image recipe using the ``container``
+      image type.
+
+      See the documentation of the :ref:`ref-classes-image-container` class for
+      more information on why setting the :term:`PREFERRED_PROVIDER` to
+      ``linux-dummy`` is advised with this class.
 
    :term:`IMAGE_DEVICE_TABLES`
       Specifies one or more files that contain custom device tables that

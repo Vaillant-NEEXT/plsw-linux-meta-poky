@@ -44,7 +44,7 @@ Here are features and advantages of the Yocto Project:
    system, software, and service vendors adopt and support the Yocto
    Project in their products and services. For a look at the Yocto
    Project community and the companies involved with the Yocto Project,
-   see the "COMMUNITY" and "ECOSYSTEM" tabs on the
+   see the "COMMUNITY" and "ABOUT" tabs on the
    :yocto_home:`Yocto Project <>` home page.
 
 -  *Architecture Agnostic:* Yocto Project supports Intel, ARM, MIPS,
@@ -60,10 +60,9 @@ Here are features and advantages of the Yocto Project:
    move between architectures without moving to new development
    environments. Additionally, if you have used the Yocto Project to
    create an image or application and you find yourself not able to
-   support it, commercial Linux vendors such as Wind River, Mentor
-   Graphics, Timesys, and ENEA could take it and provide ongoing
-   support. These vendors have offerings that are built using the Yocto
-   Project.
+   support it, commercial Linux vendors listed on :yocto_home:`/members/` and
+   :yocto_home:`/about/participants/` could take it and provide ongoing
+   support.
 
 -  *Flexibility:* Corporations use the Yocto Project many different
    ways. One example is to create an internal Linux distribution as a
@@ -735,7 +734,7 @@ The :term:`OpenEmbedded Build System` uses a "workflow" to
 accomplish image and SDK generation. The following figure overviews that
 workflow:
 
-.. image:: figures/YP-flow-diagram.png
+.. image:: svg/yp-flow-diagram.*
     :width: 100%
 
 Here is a brief summary of the "workflow":
@@ -761,7 +760,8 @@ Here is a brief summary of the "workflow":
    package feed that is used to create the final root file image.
 
 #. The build system generates the file system image and a customized
-   Extensible SDK (eSDK) for application development in parallel.
+   :doc:`SDK </sdk-manual/index>` (Software Development Kit) for application
+   development in parallel.
 
 For a very detailed look at this workflow, see the
 ":ref:`overview-manual/concepts:openembedded build system concepts`" section.
