@@ -5349,7 +5349,8 @@ system and gives an overview of their function and contents.
       section in the Yocto Project Development Tasks Manual.
 
    :term:`LICENSE`
-      The list of source licenses for the recipe. Follow these rules:
+      This is a required field in an OpenEmbedded recipe file, and should
+      contain a list of source licenses for the recipe. Follow these rules:
 
       -  Do not use spaces within individual license names.
 
@@ -5388,6 +5389,12 @@ system and gives an overview of their function and contents.
          LICENSE = "GFDL-1.2 & GPL-2.0-only"
          LICENSE:${PN} = "GPL-2.0.only"
          LICENSE:${PN}-doc = "GFDL-1.2"
+
+      .. note::
+
+         A recipe's :term:`LICENSE` value must be accompanied by an associated
+         :term:`LIC_FILES_CHKSUM` value, except in the special case where
+         the :term:`LICENSE` value is set to "CLOSED".
 
    :term:`LICENSE_CREATE_PACKAGE`
       Setting :term:`LICENSE_CREATE_PACKAGE` to "1" causes the OpenEmbedded
@@ -5773,6 +5780,9 @@ system and gives an overview of their function and contents.
 
       The default value for :term:`MIRRORS` is defined in the
       ``meta/classes-global/mirrors.bbclass`` file in the core metadata layer.
+
+      See the definition of this variable in the BitBake Manual for more
+      details: :term:`bitbake:MIRRORS`.
 
    :term:`MLPREFIX`
       Specifies a prefix has been added to :term:`PN` to create a
@@ -6346,8 +6356,8 @@ system and gives an overview of their function and contents.
       an iterative development process to remove specific components from a
       system.
 
-      This variable is supported only when using the IPK and RPM
-      packaging backends. DEB is not supported.
+      This variable is supported by all of the RPM, DEB and IPK
+      packaging backends.
 
       See the :term:`NO_RECOMMENDATIONS` and the
       :term:`BAD_RECOMMENDATIONS` variables for
@@ -7099,6 +7109,9 @@ system and gives an overview of their function and contents.
       ``file://`` URLs to point to local directories or network shares as
       well.
 
+      See the definition of this variable in the BitBake Manual for more
+      details: :term:`bitbake:PREMIRRORS`.
+
    :term:`PRIORITY`
       Indicates the importance of a package.
 
@@ -7525,6 +7538,12 @@ system and gives an overview of their function and contents.
    :term:`RM_WORK_EXCLUDE`
       With :ref:`ref-classes-rm-work` enabled, this variable
       specifies a list of recipes whose work directories should not be removed.
+      See the ":ref:`ref-classes-rm-work`" section for more details.
+
+   :term:`RM_WORK_EXCLUDE_ITEMS`
+      With :ref:`ref-classes-rm-work` enabled, this variable specifies
+      a list of files or folders --- relative to the recipe's :term:`WORKDIR` ---
+      to be preserved.
       See the ":ref:`ref-classes-rm-work`" section for more details.
 
    :term:`ROOT_HOME`

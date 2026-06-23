@@ -2404,6 +2404,18 @@ section in the Yocto Project Development Tasks Manual.
 
 Previously, this class was called the ``task`` class.
 
+.. note::
+
+   If you're defining a packagegroup and need to set::
+
+      PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+   for the packagegroup, you need to do that *before* the
+   ``inherit packagegroup`` line in the recipe file.
+   Setting it afterward can break BitBake parsing, result in
+   an "allarch" architecture mismatch error, or allow
+   architecture-independent defaults to override your intent.
+
 .. _ref-classes-patch:
 
 ``patch``
@@ -2843,6 +2855,13 @@ recipe or recipes you are working on to the :term:`RM_WORK_EXCLUDE` variable,
 which can also be set in your ``local.conf`` file. Here is an example::
 
    RM_WORK_EXCLUDE += "busybox glibc"
+
+Finally, if you are using this class for a recipe but want to prevent
+:term:`BitBake` from deleting specific folders or files in that recipe's
+:term:`WORKDIR` (other than ``temp``), you can preserve those folders or
+files with the :term:`RM_WORK_EXCLUDE_ITEMS` variable as follows::
+
+   RM_WORK_EXCLUDE_ITEMS += "items_to_keep"
 
 .. _ref-classes-rootfs*:
 

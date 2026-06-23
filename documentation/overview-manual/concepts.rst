@@ -11,6 +11,14 @@ workflow,
 cross-development toolchains, shared state cache, and so forth are
 explained.
 
+.. note::
+
+   Throughout this section, many variables and their meanings are
+   introduced. If, in the context of a :term:`Build Directory`,
+   you want to examine the value of any of these variables, you can
+   use the ``bitbake-getvar`` command, explained in the
+   ":ref:`dev-manual/debugging:viewing variable values`" section.
+
 Yocto Project Components
 ========================
 
@@ -63,7 +71,7 @@ following commands::
 The most common usage for BitBake is ``bitbake recipename``, where
 ``recipename`` is the name of the recipe you want to build (referred
 to as the "target"). The target often equates to the first part of a
-recipe's filename (e.g. "foo" for a recipe named ``foo_1.3.0-r0.bb``).
+recipe's filename (e.g. "foo" for a recipe file named ``foo_1.3.0.bb``).
 So, to process the ``matchbox-desktop_1.2.3.bb`` recipe file, you might
 type the following::
 
@@ -427,7 +435,8 @@ configurations into their own layer. Settings you provide in
 in your ``conf/local.conf`` file in the :term:`Build Directory`.
 
 The following list provides some explanation and references for what you
-typically find in a distribution layer:
+typically find in a distribution layer (recall that
+:yocto_git:`meta-poky </meta-yocto/tree/meta-poky>` is such a layer):
 
 -  *classes*, *classes-global*, *classes-recipe:* Class files (``.bbclass``)
    hold common functionality that
@@ -770,7 +779,8 @@ and the :term:`FILESPATH` variable
 to locate applicable patch files.
 
 Default processing for patch files assumes the files have either
-``*.patch`` or ``*.diff`` file types. You can use :term:`SRC_URI` parameters
+``*.patch`` or ``*.diff`` file types (or a compressed form of those
+file types). You can use :term:`SRC_URI` parameters
 to change the way the build system recognizes patch files. See the
 :ref:`ref-tasks-patch` task for more
 information.
@@ -939,7 +949,7 @@ root filesystem on the target, and must *not* make a reference to the variable
 .. note::
 
    The list of files for a package is defined using the override syntax by
-   separating :term:`FILES` and the package name by a semi-colon (``:``).
+   separating :term:`FILES` and the package name by a colon (``:``).
 
 A given file can only ever be in one package. By iterating from the leftmost to
 rightmost package in :term:`PACKAGES`, each file matching one of the patterns
@@ -1137,7 +1147,7 @@ host part is the part of the SDK that runs on the
 :term:`SDKMACHINE`.
 
 The :ref:`ref-tasks-populate_sdk_ext` task helps create the extensible SDK and
-handles host and target parts differently than its counter part does for
+handles host and target parts differently than its counterpart does for
 the standard SDK. For the extensible SDK, the task encapsulates the
 build system, which includes everything needed (host and target) for the
 SDK.
@@ -1818,7 +1828,8 @@ adding shared state wrapping to a task is as simple as this
        sstate_setscene(d)
    }
    addtask do_deploy_setscene
-   do_deploy[dirs] = "${DEPLOYDIR} ${B}"
+   do_deploy[dirs] = "${B}"
+   do_deploy[cleandirs] = "${DEPLOYDIR}"
    do_deploy[stamp-extra-info] = "${MACHINE_ARCH}"
 
 The following list explains the previous example:
@@ -1863,9 +1874,16 @@ The following list explains the previous example:
    information, see the ":ref:`bitbake-user-manual/bitbake-user-manual-execution:setscene`"
    section in the BitBake User Manual.
 
--  The ``do_deploy[dirs] = "${DEPLOYDIR} ${B}"`` line creates ``${DEPLOYDIR}``
-   and ``${B}`` before the :ref:`ref-tasks-deploy` task runs, and also sets the
-   current working directory of :ref:`ref-tasks-deploy` to ``${B}``. For more
+-  The ``do_deploy[dirs] = "${B}"`` line creates the directory ``${B}``
+   before the :ref:`ref-tasks-deploy` task runs, and also sets the
+   current working directory of :ref:`ref-tasks-deploy` to ``${B}``.
+   (If the directory already exists, it is left as is.) For more
+   information, see the ":ref:`bitbake-user-manual/bitbake-user-manual-metadata:variable flags`"
+   section in the BitBake User Manual.
+
+-  The ``do_deploy[cleandirs] = "${DEPLOYDIR}"`` line creates the *empty*
+   directory ``${DEPLOYDIR}`` before the :ref:`ref-tasks-deploy` task runs.
+   (If the directory already exists, it is deleted and recreated empty.) For more
    information, see the ":ref:`bitbake-user-manual/bitbake-user-manual-metadata:variable flags`"
    section in the BitBake User Manual.
 

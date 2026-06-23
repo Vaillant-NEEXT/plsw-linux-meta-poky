@@ -7,13 +7,17 @@
 #
 
 import contextlib
+import http.server
+import shutil
 import unittest
 import hashlib
 import tempfile
 import collections
 import os
 import signal
+import subprocess
 import tarfile
+import threading
 from bb.fetch2 import URI
 from bb.fetch2 import FetchMethod
 import bb
@@ -731,6 +735,34 @@ class FetcherLocalTest(FetcherTest):
         bb.process.run('tar cjf archive.tar.bz2 -C dir .', cwd=self.localsrcdir)
         self.d.setVar("FILESPATH", self.localsrcdir)
 
+    def make_ar_package(self, package_name, data_member="data.tar"):
+        if not shutil.which("ar"):
+            self.skipTest("ar not installed")
+
+        workdir = tempfile.mkdtemp(dir=self.tempdir)
+        payload = os.path.join(workdir, "payload")
+        with open(payload, "w") as f:
+            f.write("payload\n")
+
+        data_path = os.path.join(workdir, data_member)
+        mode = "w:gz" if data_member.endswith(".gz") else "w"
+        with tarfile.open(data_path, mode) as archive:
+            archive.add(payload, arcname="payload")
+
+        with open(os.path.join(workdir, "debian-binary"), "w") as f:
+            f.write("2.0\n")
+
+        control = os.path.join(workdir, "control")
+        with open(control, "w") as f:
+            f.write("Package: fetch-test\nVersion: 1\nArchitecture: all\n")
+        with tarfile.open(os.path.join(workdir, "control.tar"), "w") as archive:
+            archive.add(control, arcname="control")
+
+        package_path = os.path.join(self.localsrcdir, package_name)
+        subprocess.check_call(["ar", "r", package_path, "debian-binary", "control.tar", data_member],
+                              cwd=workdir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return package_name
+
     def fetchUnpack(self, uris):
         fetcher = bb.fetch.Fetch(uris, self.d)
         fetcher.download()
@@ -799,6 +831,40 @@ class FetcherLocalTest(FetcherTest):
     def test_local_striplevel_bzip2(self):
         tree = self.fetchUnpack(['file://archive.tar.bz2;subdir=bar;striplevel=1'])
         self.assertEqual(tree, ['bar/c', 'bar/d', 'bar/subdir/e'])
+
+    def test_local_deb_quoted_filename(self):
+        package = self.make_ar_package("archive$(id).deb")
+        tree = self.fetchUnpack(['file://%s' % package])
+        self.assertEqual(tree, ['payload'])
+
+    def test_local_ipk_gz_data_member(self):
+        package = self.make_ar_package("archive.ipk", data_member="data.tar.gz")
+        tree = self.fetchUnpack(['file://%s' % package])
+        self.assertEqual(tree, ['payload'])
+
+    def test_local_deb_rejects_unknown_data_member_suffix(self):
+        package = self.make_ar_package("archive.deb", data_member="data.tar.foo")
+        with self.assertRaises(bb.fetch2.UnpackError) as context:
+            self.fetchUnpack(['file://%s' % package])
+
+        self.assertIn("does not contain supported data.tar* file", str(context.exception))
+
+    def test_local_deb_rejects_unsafe_data_member(self):
+        package = self.make_ar_package("archive.deb", data_member="data.tar.xz;id")
+        with self.assertRaises(bb.fetch2.UnpackError) as context:
+            self.fetchUnpack(['file://%s' % package])
+
+        self.assertIn("does not contain supported data.tar* file", str(context.exception))
+
+    def assertInvalidStriplevel(self, value):
+        with self.assertRaises(bb.fetch2.UnpackError) as context:
+            self.fetchUnpack(['file://archive.tar;subdir=bar;striplevel=%s' % value])
+        self.assertIn("Invalid striplevel parameter", str(context.exception))
+
+    def test_local_striplevel_rejects_invalid_values(self):
+        for value in ("abc", "", "-1", "1 2"):
+            with self.subTest(striplevel=repr(value)):
+                self.assertInvalidStriplevel(value)
 
     def dummyGitTest(self, suffix):
         # Create dummy local Git repo
@@ -1546,6 +1612,41 @@ class FetchCheckStatusTest(FetcherTest):
                       "https://github.com/kergoth/tslib/releases/download/1.1/tslib-1.1.tar.xz"
                       ]
 
+    def _start_checkstatus_server(self):
+        class CheckStatusHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
+            def do_HEAD(self):
+                self.server.requests.append((self.path, dict(self.headers)))
+                if self.path == "/a" and self.server.redirect_url:
+                    self.send_response(302)
+                    self.send_header("Location", self.server.redirect_url)
+                    self.end_headers()
+                    return
+                self.send_response(200)
+                self.end_headers()
+
+            def log_message(self, format_str, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), CheckStatusHTTPRequestHandler)
+        server.redirect_url = None
+        server.requests = []
+        thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
+        thread.daemon = True
+        thread.start()
+
+        def stop_server():
+            server.shutdown()
+            thread.join()
+            server.server_close()
+
+        self.addCleanup(stop_server)
+        return server
+
+    def _checkstatus(self, url):
+        fetch = bb.fetch2.Fetch([url], self.d)
+        ud = fetch.ud[url]
+        return ud.method.checkstatus(fetch, ud, self.d)
+
     @skipIfNoNetwork()
     def test_wget_checkstatus(self):
         fetch = bb.fetch2.Fetch(self.test_wget_uris, self.d)
@@ -1572,6 +1673,31 @@ class FetchCheckStatusTest(FetcherTest):
                 self.assertTrue(ret, msg="URI %s, can't check status" % (u))
 
         connection_cache.close_connections()
+
+    def test_wget_checkstatus_same_origin_redirect_keeps_auth(self):
+        server = self._start_checkstatus_server()
+        server.redirect_url = "http://127.0.0.1:%s/b" % server.server_port
+
+        url = "http://127.0.0.1:%s/a;user=user;pswd=pass" % server.server_port
+        self.assertTrue(self._checkstatus(url))
+
+        self.assertEqual(len(server.requests), 2)
+        redirected_headers = {k.lower(): v for k, v in server.requests[1][1].items()}
+        self.assertIn("authorization", redirected_headers)
+
+    def test_wget_checkstatus_different_origin_redirect_drops_auth(self):
+        origin = self._start_checkstatus_server()
+        target = self._start_checkstatus_server()
+        # Same host but different port is a different origin.
+        origin.redirect_url = "http://127.0.0.1:%s/b" % target.server_port
+
+        url = "http://127.0.0.1:%s/a;user=user;pswd=pass" % origin.server_port
+        self.assertTrue(self._checkstatus(url))
+
+        self.assertEqual(len(origin.requests), 1)
+        self.assertEqual(len(target.requests), 1)
+        redirected_headers = {k.lower(): v for k, v in target.requests[0][1].items()}
+        self.assertNotIn("authorization", redirected_headers)
 
 
 class GitMakeShallowTest(FetcherTest):
@@ -2141,6 +2267,36 @@ class GitShallowTest(FetcherTest):
 
         self.assertRefs(['master', 'origin/master', 'v1.0'])
         self.assertRevCount(1)
+
+    def test_shallow_extra_refs_wildcard_shell_quoted(self):
+        self.add_empty_file('a')
+        marker = os.path.join(self.tempdir, 'ref-command-marker')
+        ref = 'refs/tags/poc;touch${IFS}%s' % marker
+        self.git(['update-ref', ref, 'HEAD'], cwd=self.srcdir)
+
+        self.d.setVar('BB_GIT_SHALLOW_EXTRA_REFS', 'refs/tags/*')
+        self.fetch_shallow()
+
+        self.assertFalse(os.path.exists(marker))
+        self.assertRefs(['master', 'origin/master', ref])
+
+    def test_shallow_extra_refs_wildcard_fetch_options(self):
+        self.add_empty_file('a')
+        marker = os.path.join(self.tempdir, 'ref-option-marker')
+        helper = os.path.join(self.tempdir, 'upload-pack-helper')
+        with open(helper, 'w') as f:
+            f.write('#!/bin/sh\n')
+            f.write('touch "%s"\n' % marker)
+            f.write('exec git-upload-pack "$@"\n')
+        os.chmod(helper, 0o755)
+        ref = 'refs/tags/--upload-pack=%s' % helper
+        self.git(['update-ref', ref, 'HEAD'], cwd=self.srcdir)
+
+        self.d.setVar('BB_GIT_SHALLOW_EXTRA_REFS', 'refs/tags/*')
+        self.fetch_shallow()
+
+        self.assertFalse(os.path.exists(marker))
+        self.assertRefs(['master', 'origin/master', ref])
 
     def test_shallow_missing_extra_refs(self):
         self.add_empty_file('a')
