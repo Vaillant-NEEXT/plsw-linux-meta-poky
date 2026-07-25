@@ -2327,11 +2327,8 @@ consider some further things about using RPM:
    perform on-device upgrades.
 
 You can find additional information on the effects of the package class
-at these two Yocto Project mailing list links:
-
--  :yocto_lists:`/pipermail/poky/2011-May/006362.html`
-
--  :yocto_lists:`/pipermail/poky/2011-May/006363.html`
+at this Yocto Project mailing list link:
+:yocto_lists:`/g/poky/topic/61292484#msg6286`
 
 .. _ref-classes-package_deb:
 
@@ -3000,7 +2997,7 @@ Python version 3.x extensions that use build systems based on ``setuptools``
 ``pyproject.toml`` format). Unlike :ref:`ref-classes-setuptools3`,
 this uses the traditional ``setup.py`` ``build`` and ``install`` commands and
 not wheels. This use of ``setuptools`` like this is
-`deprecated <https://github.com/pypa/setuptools/blob/main/CHANGES.rst#v5830>`__
+`deprecated <https://github.com/pypa/setuptools/blob/14cc4452199818e60cf01cd9cea96e90761abce7/NEWS.rst#v5830>`__
 but still relatively common.
 
 .. _ref-classes-setuptools3-base:
@@ -3265,7 +3262,7 @@ the :term:`SYSTEMD_BOOT_CFG`,
 :term:`SYSTEMD_BOOT_TIMEOUT` variables.
 
 You can also see the `Systemd-boot
-documentation <https://www.freedesktop.org/wiki/Software/systemd/systemd-boot/>`__
+documentation <https://systemd.io/BOOT/>`__
 for more information.
 
 .. _ref-classes-terminal:
